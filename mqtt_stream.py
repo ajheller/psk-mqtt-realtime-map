@@ -1,17 +1,24 @@
-
-import os, json, re, subprocess
+import os
+import json
+import re
+import subprocess
 from typing import Dict, Optional
 from maidenhead import maidenhead_to_latlon
 
 KV_RE = re.compile(r"(\w+)=([^\s]+)")
 
+
 def mqtt_line_stream(cmd: str, host: str, port: str, topic: str):
     args = [cmd, "-h", host, "-p", str(port), "-t", topic, "-v"]
     username = os.environ.get("MOSQUITTO_USERNAME")
     password = os.environ.get("MOSQUITTO_PASSWORD")
-    if username: args += ["-u", username]
-    if password: args += ["-P", password]
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    if username:
+        args += ["-u", username]
+    if password:
+        args += ["-P", password]
+    proc = subprocess.Popen(
+        args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     try:
         for line in proc.stdout:
             if line.strip():
@@ -22,12 +29,17 @@ def mqtt_line_stream(cmd: str, host: str, port: str, topic: str):
         except Exception:
             pass
 
+
 def parse_kv_pairs(s: str) -> Dict[str, str]:
     return {k: v for k, v in KV_RE.findall(s)}
 
+
 def as_float(v):
-    try: return float(v)
-    except: return None
+    try:
+        return float(v)
+    except:
+        return None
+
 
 def parse_spot(raw_line: str) -> Optional[Dict]:
     parts = raw_line.split(" ", 1)
@@ -47,8 +59,10 @@ def parse_spot(raw_line: str) -> Optional[Dict]:
     tx_loc = low.get("sl") or low.get("txlocator") or low.get("txgrid")
 
     rx_lat = rx_lon = tx_lat = tx_lon = None
-    if rx_loc: rx_lat, rx_lon = maidenhead_to_latlon(rx_loc)
-    if tx_loc: tx_lat, tx_lon = maidenhead_to_latlon(tx_loc)
+    if rx_loc:
+        rx_lat, rx_lon = maidenhead_to_latlon(rx_loc)
+    if tx_loc:
+        tx_lat, tx_lon = maidenhead_to_latlon(tx_loc)
 
     primary = None
     if rx_lat is not None and rx_lon is not None:
@@ -73,11 +87,16 @@ def parse_spot(raw_line: str) -> Optional[Dict]:
         label_parts.append(tx_call)
     elif rx_call:
         label_parts.append(rx_call)
-    if band: label_parts.append(band)
-    if mode: label_parts.append(mode)
-    if freq: label_parts.append(str(freq))
-    if snr: label_parts.append(f"SNR {snr}")
-    if ts: label_parts.append(str(ts))
+    if band:
+        label_parts.append(band)
+    if mode:
+        label_parts.append(mode)
+    if freq:
+        label_parts.append(str(freq))
+    if snr:
+        label_parts.append(f"SNR {snr}")
+    if ts:
+        label_parts.append(str(ts))
     label = " · ".join(label_parts)
 
     return {

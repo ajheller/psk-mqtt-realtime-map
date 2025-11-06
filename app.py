@@ -1,11 +1,12 @@
-print("0: app.py file executing")
 
-import os, re
-from threading import Thread
+import re
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 import folium
 from mqtt_stream import mqtt_line_stream, parse_spot
+import os
+
+print("0: app.py file executing")
 
 BIND_HOST = os.environ.get("BIND_HOST", "127.0.0.1")
 BIND_PORT = int(os.environ.get("BIND_PORT", "5000"))
@@ -14,9 +15,11 @@ MAX_MARKERS = int(os.environ.get("MAX_MARKERS", "2000"))
 app = Flask(__name__, static_folder="static", template_folder="templates")
 socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
 
-@socketio.on("connect")
-def handle_connect():
-    print("⚡ Client connected via Socket.IO")
+
+# @socketio.on("connect")
+# def handle_connect():
+#     print("⚡ Client connected via Socket.IO")
+
 
 # @socketio.on("connect")
 # def handle_connect():
@@ -29,15 +32,23 @@ def handle_connect():
 #         "rx_lat": None, "rx_lon": None,
 #         "tx_lat": None, "tx_lon": None
 #     })
-@socketio.on("connect")
-def handle_connect():
-    print("⚡ Client connected via Socket.IO")
-    # keep the TEST emit if you like:
-    socketio.emit("spot", {
-        "label": "TEST · Hello world",
-        "lat": 37.7749, "lon": -122.4194,
-        "rx_lat": None, "rx_lon": None, "tx_lat": None, "tx_lon": None
-    }, namespace="/")
+# @socketio.on("connect")
+# def handle_connect():
+#     print("⚡ Client connected via Socket.IO")
+#     # keep the TEST emit if you like:
+#     socketio.emit(
+#         "spot",
+#         {
+#             "label": "TEST · Hello world",
+#             "lat": 37.7749,
+#             "lon": -122.4194,
+#             "rx_lat": None,
+#             "rx_lon": None,
+#             "tx_lat": None,
+#             "tx_lon": None,
+#         },
+#         namespace="/",
+#     )
 
 
 def build_map_html():
@@ -46,17 +57,25 @@ def build_map_html():
     mname = re.search(r"var\s+(map_[a-f0-9]+)\s*=\s*L\.map", html)
     if mname:
         var = mname.group(1)
-        html = html.replace("</body>", f"<script>window._folium_map={var};</script></body>")
+        html = html.replace(
+            "</body>", f"<script>window._folium_map={var};</script></body>"
+        )
     return html
+
 
 FOLIUM_HTML = build_map_html()
 
+
 @app.route("/")
 def index():
-#    return "Flask route reached OK"
+    #    return "Flask route reached OK"
     import os
+
     print("Looking for template in:", os.path.abspath(app.template_folder))
-    return render_template("index.html", folium_map=FOLIUM_HTML, max_markers=MAX_MARKERS)
+    return render_template(
+        "index.html", folium_map=FOLIUM_HTML, max_markers=MAX_MARKERS
+    )
+
 
 # def reader():
 #     print("R0: reader function entered")
@@ -115,14 +134,24 @@ def index():
 #     socketio.run(app, host=BIND_HOST, port=BIND_PORT, log_output=True)
 #     print("C: socketio.run returned")
 
+
 @socketio.on("connect")
 def handle_connect():
     print("⚡ Client connected via Socket.IO")
-    socketio.emit("spot", {
-        "label": "TEST · Hello world",
-        "lat": 37.7749, "lon": -122.4194,
-        "rx_lat": None, "rx_lon": None, "tx_lat": None, "tx_lon": None
-    }, namespace="/")  # no 'broadcast' arg
+    socketio.emit(
+        "spot",
+        {
+            "label": "TEST · Hello world",
+            "lat": 37.7749,
+            "lon": -122.4194,
+            "rx_lat": None,
+            "rx_lon": None,
+            "tx_lat": None,
+            "tx_lon": None,
+        },
+        namespace="/",
+    )  # no 'broadcast' arg
+
 
 def reader():
     print("R0: reader function entered")
@@ -140,9 +169,10 @@ def reader():
             socketio.emit("spot", spot, namespace="/")  # <-- remove broadcast
             socketio.sleep(0)  # yield to the eventlet loop
 
+
 if __name__ == "__main__":
     print("A: entered main")
-    socketio.start_background_task(reader)   # use SocketIO’s background task helper
+    socketio.start_background_task(reader)  # use SocketIO’s background task helper
     print("B: started reader task")
     socketio.run(app, host=BIND_HOST, port=BIND_PORT, log_output=True)
     print("C: socketio.run returned")
