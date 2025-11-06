@@ -1,0 +1,28 @@
+
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MQTT PSK Reporter Map</title>
+<style>
+  html,body{margin:0;height:100%}
+  .overlay{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;font-family:sans-serif;z-index:9999}
+</style>
+</head><body>
+{{ folium_map|safe }}
+<script>
+  window._folium_map = window._folium_map || (function(){
+    for(const k in window){
+      const obj=window[k];
+      if(k.startsWith("map_") && obj && typeof obj.addLayer==="function"){
+        console.log("Detected Folium Leaflet map:",k);
+        return obj;
+      }
+    }
+    console.warn("Could not locate Folium map object");
+    return null;
+  })();
+</script>
+<div class="overlay">Live Spots: <span id="count">0</span></div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="/static/client.js"></script>
+</body></html>
